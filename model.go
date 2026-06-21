@@ -6,7 +6,10 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
+
+var selectedLineStyle = lipgloss.NewStyle().Background(lipgloss.Color("237"))
 
 type mode int
 
@@ -221,7 +224,11 @@ func (m model) View() string {
 		if i == m.cursor {
 			cursor = "> "
 		}
-		fmt.Fprintf(&b, "%s[%s] %s\n", cursor, t.Status.Label(), t.Title)
+		line := fmt.Sprintf("%s%s %s", cursor, t.Status.Icon(), t.Title)
+		if i == m.cursor {
+			line = selectedLineStyle.Render(line)
+		}
+		fmt.Fprintf(&b, "%s\n", line)
 	}
 
 	b.WriteString("\n")
@@ -237,11 +244,15 @@ func (m model) View() string {
 			if i == m.statusCursor {
 				cursor = "> "
 			}
-			fmt.Fprintf(&b, "%s%s\n", cursor, st.Label())
+			line := fmt.Sprintf("%s%s %s", cursor, st.Icon(), st.Label())
+			if i == m.statusCursor {
+				line = selectedLineStyle.Render(line)
+			}
+			fmt.Fprintf(&b, "%s\n", line)
 		}
-		b.WriteString("\nj/k move · enter select · esc cancel\n")
+		b.WriteString("\nMove: j/k | Select: Enter · Cancel: Esc\n")
 	default:
-		b.WriteString("j/k move · s set status · a add · d delete · q quit\n")
+		b.WriteString("Move: j/k | Status: s | Add: a | Delete: d | Quit: q\n")
 	}
 
 	return b.String()

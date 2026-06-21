@@ -27,6 +27,18 @@ func (s Status) Label() string {
 	}
 }
 
+// Icon returns a circle glyph representing the status.
+func (s Status) Icon() string {
+	switch s {
+	case StatusInProgress:
+		return "◐"
+	case StatusDone:
+		return "●"
+	default:
+		return "○"
+	}
+}
+
 type Task struct {
 	ID        int64
 	Title     string

@@ -1,0 +1,4 @@
+bin/
+did
+*.db
+.DS_Store

@@ -29,6 +29,9 @@ type model struct {
 
 	statusCursor int
 
+	width  int
+	height int
+
 	err error
 }
 
@@ -65,6 +68,11 @@ func (m model) loadTasks() tea.Msg {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		return m, nil
+
 	case tasksLoadedMsg:
 		m.tasks = msg.tasks
 		if m.cursor >= len(m.tasks) {
@@ -231,14 +239,13 @@ func (m model) View() string {
 		fmt.Fprintf(&b, "%s\n", line)
 	}
 
-	b.WriteString("\n")
-
+	var footer strings.Builder
 	switch m.mode {
 	case modeAdding:
-		fmt.Fprintf(&b, "New task: %s\n", m.input.View())
-		b.WriteString("enter to save, esc to cancel\n")
+		fmt.Fprintf(&footer, "New task: %s\n", m.input.View())
+		footer.WriteString("enter to save, esc to cancel\n")
 	case modePickingStatus:
-		b.WriteString("Set status:\n")
+		footer.WriteString("Set status:\n")
 		for i, st := range AllStatuses {
 			cursor := "  "
 			if i == m.statusCursor {
@@ -248,12 +255,26 @@ func (m model) View() string {
 			if i == m.statusCursor {
 				line = selectedLineStyle.Render(line)
 			}
-			fmt.Fprintf(&b, "%s\n", line)
+			fmt.Fprintf(&footer, "%s\n", line)
 		}
-		b.WriteString("\nMove: j/k | Select: Enter · Cancel: Esc\n")
+		footer.WriteString("\nMove: j/k | Select: Enter · Cancel: Esc\n")
 	default:
-		b.WriteString("Move: j/k | Status: s | Add: a | Delete: d | Quit: q\n")
+		footer.WriteString("Move: j/k | Status: s | Add: a | Delete: d | Quit: q\n")
 	}
 
-	return b.String()
+	body := b.String()
+	footerStr := strings.TrimSuffix(footer.String(), "\n")
+
+	if m.height > 0 {
+		bodyLines := strings.Count(body, "\n")
+		footerLines := strings.Count(footerStr, "\n")
+		padding := m.height - bodyLines - footerLines - 1
+		if padding > 0 {
+			body += strings.Repeat("\n", padding)
+		}
+	} else {
+		body += "\n"
+	}
+
+	return body + footerStr
 }

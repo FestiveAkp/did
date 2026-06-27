@@ -1,4 +1,5 @@
 bin/
 did
+tmp/
 *.db
 .DS_Store

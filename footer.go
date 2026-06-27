@@ -28,6 +28,9 @@ func (f footer) View() string {
 	case modeAdding:
 		fmt.Fprintf(&b, "New task: %s\n", f.input)
 		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("enter save | esc cancel"))
+	case modeAddingActivity:
+		fmt.Fprintf(&b, "New activity: %s\n", f.input)
+		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("enter save | esc cancel"))
 	case modePickingStatus:
 		b.WriteString("Set status:\n")
 		for i, st := range f.allStatuses {
@@ -43,7 +46,7 @@ func (f footer) View() string {
 		}
 		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("↑/k up | ↓/j down | Enter select | Esc cancel"))
 	default:
-		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("↑/k up | ↓/j down | s set status | a add | d delete | q quit"))
+		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("↑/k up | ↓/j down | s set status | a add task | n add activity | d delete | q quit"))
 	}
 
 	return strings.TrimSuffix(b.String(), "\n")

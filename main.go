@@ -16,8 +16,9 @@ func main() {
 	defer db.Close()
 
 	store := NewTaskStore(db)
+	activityStore := NewActivityStore(db)
 
-	p := tea.NewProgram(newModel(store), tea.WithAltScreen())
+	p := tea.NewProgram(newModel(store, activityStore), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)

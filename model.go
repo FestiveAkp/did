@@ -15,12 +15,15 @@ const (
 	modeNormal mode = iota
 	modeAdding
 	modePickingStatus
+	modeAddingActivity
 )
 
 type model struct {
-	store  *TaskStore
-	tasks  []Task
-	cursor int
+	store         *TaskStore
+	activityStore *ActivityStore
+	tasks         []Task
+	activities    map[int64][]Activity
+	cursor        int
 
 	mode  mode
 	input textinput.Model
@@ -34,21 +37,22 @@ type model struct {
 }
 
 type tasksLoadedMsg struct {
-	tasks []Task
+	tasks      []Task
+	activities map[int64][]Activity
 }
 
 type errMsg struct {
 	err error
 }
 
-func newModel(store *TaskStore) model {
+func newModel(store *TaskStore, activityStore *ActivityStore) model {
 	ti := textinput.New()
-	ti.Placeholder = "Task title"
 	ti.CharLimit = 200
 
 	return model{
-		store: store,
-		input: ti,
+		store:         store,
+		activityStore: activityStore,
+		input:         ti,
 	}
 }
 
@@ -61,7 +65,15 @@ func (m model) loadTasks() tea.Msg {
 	if err != nil {
 		return errMsg{err}
 	}
-	return tasksLoadedMsg{tasks}
+	activities := make(map[int64][]Activity)
+	for _, t := range tasks {
+		acts, err := m.activityStore.ListForTask(t.ID)
+		if err != nil {
+			return errMsg{err}
+		}
+		activities[t.ID] = acts
+	}
+	return tasksLoadedMsg{tasks, activities}
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -73,6 +85,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tasksLoadedMsg:
 		m.tasks = msg.tasks
+		m.activities = msg.activities
 		if m.cursor >= len(m.tasks) {
 			m.cursor = len(m.tasks) - 1
 		}
@@ -91,6 +104,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.updateAdding(msg)
 		case modePickingStatus:
 			return m.updatePickingStatus(msg)
+		case modeAddingActivity:
+			return m.updateAddingActivity(msg)
 		default:
 			return m.updateNormal(msg)
 		}
@@ -128,6 +143,36 @@ func (m model) updateAdding(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+func (m model) updateAddingActivity(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc":
+		m.mode = modeNormal
+		m.input.Reset()
+		m.input.Blur()
+		return m, nil
+
+	case "enter":
+		note := strings.TrimSpace(m.input.Value())
+		m.mode = modeNormal
+		m.input.Reset()
+		m.input.Blur()
+		if note == "" {
+			return m, nil
+		}
+		taskID := m.tasks[m.cursor].ID
+		return m, func() tea.Msg {
+			if _, err := m.activityStore.Create(taskID, note); err != nil {
+				return errMsg{err}
+			}
+			return m.loadTasks()
+		}
+	}
+
+	var cmd tea.Cmd
+	m.input, cmd = m.input.Update(msg)
+	return m, cmd
+}
+
 func (m model) updateNormal(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "q", "ctrl+c":
@@ -145,6 +190,16 @@ func (m model) updateNormal(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "a":
 		m.mode = modeAdding
+		m.input.Placeholder = "Task title"
+		m.input.Focus()
+		return m, textinput.Blink
+
+	case "n":
+		if len(m.tasks) == 0 {
+			return m, nil
+		}
+		m.mode = modeAddingActivity
+		m.input.Placeholder = "Activity note"
 		m.input.Focus()
 		return m, textinput.Blink
 
@@ -235,6 +290,11 @@ func (m model) View() string {
 			line = selectedItemStyle.Render(line)
 		}
 		fmt.Fprintf(&b, "%s\n", line)
+
+		for _, a := range m.activities[t.ID] {
+			date := a.CreatedAt.Local().Format("Jan 2 3:04pm")
+			fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render(fmt.Sprintf("    · %s  %s", a.Note, date)))
+		}
 	}
 
 	body := b.String()

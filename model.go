@@ -6,10 +6,8 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
-var selectedLineStyle = lipgloss.NewStyle().Background(lipgloss.Color("237"))
 
 type mode int
 
@@ -234,36 +232,13 @@ func (m model) View() string {
 		}
 		line := fmt.Sprintf("%s%s %s", cursor, t.Status.Icon(), t.Title)
 		if i == m.cursor {
-			line = selectedLineStyle.Render(line)
+			line = selectedItemStyle.Render(line)
 		}
 		fmt.Fprintf(&b, "%s\n", line)
 	}
 
-	var footer strings.Builder
-	switch m.mode {
-	case modeAdding:
-		fmt.Fprintf(&footer, "New task: %s\n", m.input.View())
-		footer.WriteString("enter to save, esc to cancel\n")
-	case modePickingStatus:
-		footer.WriteString("Set status:\n")
-		for i, st := range AllStatuses {
-			cursor := "  "
-			if i == m.statusCursor {
-				cursor = "> "
-			}
-			line := fmt.Sprintf("%s%s %s", cursor, st.Icon(), st.Label())
-			if i == m.statusCursor {
-				line = selectedLineStyle.Render(line)
-			}
-			fmt.Fprintf(&footer, "%s\n", line)
-		}
-		footer.WriteString("\nMove: j/k | Select: Enter · Cancel: Esc\n")
-	default:
-		footer.WriteString("Move: j/k | Status: s | Add: a | Delete: d | Quit: q\n")
-	}
-
 	body := b.String()
-	footerStr := strings.TrimSuffix(footer.String(), "\n")
+	footerStr := newFooter(m).View()
 
 	if m.height > 0 {
 		bodyLines := strings.Count(body, "\n")

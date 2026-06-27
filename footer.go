@@ -12,12 +12,12 @@ type footer struct {
 	statusCursor int
 }
 
-func newFooter(m model) footer {
+func newFooter(a activeModel) footer {
 	return footer{
-		mode:         m.mode,
-		input:        m.input.View(),
+		mode:         a.mode,
+		input:        a.input.View(),
 		allStatuses:  AllStatuses,
-		statusCursor: m.statusCursor,
+		statusCursor: a.statusCursor,
 	}
 }
 
@@ -46,7 +46,7 @@ func (f footer) View() string {
 		}
 		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("↑/k up | ↓/j down | Enter select | Esc cancel"))
 	default:
-		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("↑/k up | ↓/j down | s set status | a add task | n add activity | d delete | q quit"))
+		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("1-4 switch view | ↑/k ↓/j navigate | s status | a add | n activity | d delete | q quit"))
 	}
 
 	return strings.TrimSuffix(b.String(), "\n")

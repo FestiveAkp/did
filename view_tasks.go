@@ -130,12 +130,12 @@ func (a tasksModel) updateNormal(msg tea.KeyMsg, tasks []Task) (tasksModel, tea.
 		if a.cursor > 0 {
 			a.cursor--
 		}
-	case "a":
+	case "t":
 		a.mode = modeAdding
 		a.input.Placeholder = "Task title"
 		a.input.Focus()
 		return a, textinput.Blink
-	case "n":
+	case "a":
 		if len(tasks) == 0 {
 			return a, nil
 		}

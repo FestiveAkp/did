@@ -48,7 +48,7 @@ func (f footer) View() string {
 		}
 		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("enter select | esc cancel"))
 	default:
-		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("s status | a add | n activity | d delete | q quit"))
+		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("s set status | t create task | a create activity | d delete | q quit"))
 	}
 
 	return strings.TrimSuffix(b.String(), "\n")

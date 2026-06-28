@@ -10,14 +10,16 @@ type footer struct {
 	input        string
 	allStatuses  []Status
 	statusCursor int
+	filter       taskFilter
 }
 
-func newFooter(a activeModel) footer {
+func newFooter(a tasksModel, filter taskFilter) footer {
 	return footer{
 		mode:         a.mode,
 		input:        a.input.View(),
 		allStatuses:  AllStatuses,
 		statusCursor: a.statusCursor,
+		filter:       filter,
 	}
 }
 
@@ -44,9 +46,9 @@ func (f footer) View() string {
 			}
 			fmt.Fprintf(&b, "%s\n", line)
 		}
-		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("↑/k up | ↓/j down | Enter select | Esc cancel"))
+		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("enter select | esc cancel"))
 	default:
-		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("1-4 switch view | ↑/k ↓/j navigate | s status | a add | n activity | d delete | q quit"))
+		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("s status | a add | n activity | d delete | q quit"))
 	}
 
 	return strings.TrimSuffix(b.String(), "\n")

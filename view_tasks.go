@@ -17,7 +17,7 @@ const (
 	modeAddingActivity
 )
 
-type activeModel struct {
+type tasksModel struct {
 	taskStore     *TaskStore
 	activityStore *ActivityStore
 	cursor        int
@@ -26,17 +26,17 @@ type activeModel struct {
 	statusCursor  int
 }
 
-func newActiveModel(taskStore *TaskStore, activityStore *ActivityStore) activeModel {
+func newTasksModel(taskStore *TaskStore, activityStore *ActivityStore) tasksModel {
 	ti := textinput.New()
 	ti.CharLimit = 200
-	return activeModel{
+	return tasksModel{
 		taskStore:     taskStore,
 		activityStore: activityStore,
 		input:         ti,
 	}
 }
 
-func (a activeModel) loadTasks() tea.Msg {
+func (a tasksModel) loadTasks() tea.Msg {
 	tasks, err := a.taskStore.List()
 	if err != nil {
 		return errMsg{err}
@@ -52,7 +52,7 @@ func (a activeModel) loadTasks() tea.Msg {
 	return tasksLoadedMsg{tasks, activities}
 }
 
-func (a activeModel) Update(msg tea.KeyMsg, tasks []Task) (activeModel, tea.Cmd) {
+func (a tasksModel) Update(msg tea.KeyMsg, tasks []Task) (tasksModel, tea.Cmd) {
 	switch a.mode {
 	case modeAdding:
 		return a.updateAdding(msg)
@@ -65,7 +65,7 @@ func (a activeModel) Update(msg tea.KeyMsg, tasks []Task) (activeModel, tea.Cmd)
 	}
 }
 
-func (a activeModel) updateAdding(msg tea.KeyMsg) (activeModel, tea.Cmd) {
+func (a tasksModel) updateAdding(msg tea.KeyMsg) (tasksModel, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		a.mode = modeNormal
@@ -92,7 +92,7 @@ func (a activeModel) updateAdding(msg tea.KeyMsg) (activeModel, tea.Cmd) {
 	return a, cmd
 }
 
-func (a activeModel) updateAddingActivity(msg tea.KeyMsg, tasks []Task) (activeModel, tea.Cmd) {
+func (a tasksModel) updateAddingActivity(msg tea.KeyMsg, tasks []Task) (tasksModel, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		a.mode = modeNormal
@@ -120,7 +120,7 @@ func (a activeModel) updateAddingActivity(msg tea.KeyMsg, tasks []Task) (activeM
 	return a, cmd
 }
 
-func (a activeModel) updateNormal(msg tea.KeyMsg, tasks []Task) (activeModel, tea.Cmd) {
+func (a tasksModel) updateNormal(msg tea.KeyMsg, tasks []Task) (tasksModel, tea.Cmd) {
 	switch msg.String() {
 	case "j", "down":
 		if a.cursor < len(tasks)-1 {
@@ -165,7 +165,7 @@ func (a activeModel) updateNormal(msg tea.KeyMsg, tasks []Task) (activeModel, te
 	return a, nil
 }
 
-func (a activeModel) updatePickingStatus(msg tea.KeyMsg, tasks []Task) (activeModel, tea.Cmd) {
+func (a tasksModel) updatePickingStatus(msg tea.KeyMsg, tasks []Task) (tasksModel, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		a.mode = modeNormal
@@ -201,7 +201,7 @@ func statusIndex(s Status) int {
 	return 0
 }
 
-func (a activeModel) View(tasks []Task, activities map[int64][]Activity) string {
+func (a tasksModel) View(tasks []Task, activities map[int64][]Activity) string {
 	var b strings.Builder
 
 	if len(tasks) == 0 {

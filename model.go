@@ -10,17 +10,35 @@ import (
 type viewKind int
 
 const (
-	viewActive viewKind = iota
+	viewTasks viewKind = iota
 	viewTimeline
-	viewTodo
-	viewDone
 )
 
+type taskFilter int
+
+const (
+	filterAll taskFilter = iota
+	filterInProgress
+	filterTodo
+	filterDone
+)
+
+var taskFilters = []struct {
+	label  string
+	status Status
+}{
+	{"All", ""},
+	{"In Progress", StatusInProgress},
+	{"To Do", StatusTodo},
+	{"Done", StatusDone},
+}
+
 type model struct {
-	active      activeModel
+	tasksView   tasksModel
 	tasks       []Task
 	activities  map[int64][]Activity
 	currentView viewKind
+	filter      taskFilter
 	width       int
 	height      int
 	err         error
@@ -37,12 +55,26 @@ type errMsg struct {
 
 func newModel(taskStore *TaskStore, activityStore *ActivityStore) model {
 	return model{
-		active: newActiveModel(taskStore, activityStore),
+		tasksView: newTasksModel(taskStore, activityStore),
 	}
 }
 
+func (m model) filteredTasks() []Task {
+	if m.filter == filterAll {
+		return m.tasks
+	}
+	status := taskFilters[m.filter].status
+	var result []Task
+	for _, t := range m.tasks {
+		if t.Status == status {
+			result = append(result, t)
+		}
+	}
+	return result
+}
+
 func (m model) Init() tea.Cmd {
-	return m.active.loadTasks
+	return m.tasksView.loadTasks
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -55,11 +87,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tasksLoadedMsg:
 		m.tasks = msg.tasks
 		m.activities = msg.activities
-		if m.active.cursor >= len(m.tasks) {
-			m.active.cursor = len(m.tasks) - 1
+		filtered := m.filteredTasks()
+		if m.tasksView.cursor >= len(filtered) {
+			m.tasksView.cursor = len(filtered) - 1
 		}
-		if m.active.cursor < 0 {
-			m.active.cursor = 0
+		if m.tasksView.cursor < 0 {
+			m.tasksView.cursor = 0
 		}
 		return m, nil
 
@@ -68,26 +101,32 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
-		if m.active.mode != modeNormal {
+		if m.tasksView.mode != modeNormal {
 			var cmd tea.Cmd
-			m.active, cmd = m.active.Update(msg, m.tasks)
+			m.tasksView, cmd = m.tasksView.Update(msg, m.filteredTasks())
 			return m, cmd
 		}
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		case "1":
-			m.currentView = viewActive
+			m.currentView = viewTasks
 		case "2":
 			m.currentView = viewTimeline
-		case "3":
-			m.currentView = viewTodo
-		case "4":
-			m.currentView = viewDone
+		case "h", "left":
+			if m.currentView == viewTasks && m.filter > 0 {
+				m.filter--
+				m.tasksView.cursor = 0
+			}
+		case "l", "right":
+			if m.currentView == viewTasks && int(m.filter) < len(taskFilters)-1 {
+				m.filter++
+				m.tasksView.cursor = 0
+			}
 		default:
-			if m.currentView == viewActive {
+			if m.currentView == viewTasks {
 				var cmd tea.Cmd
-				m.active, cmd = m.active.Update(msg, m.tasks)
+				m.tasksView, cmd = m.tasksView.Update(msg, m.filteredTasks())
 				return m, cmd
 			}
 		}
@@ -103,10 +142,8 @@ func (m model) tabBar() string {
 		view  viewKind
 		key   string
 	}{
-		{"Active", viewActive, "1"},
+		{"Tasks", viewTasks, "1"},
 		{"Timeline", viewTimeline, "2"},
-		{"Todo", viewTodo, "3"},
-		{"Done", viewDone, "4"},
 	}
 
 	var parts []string
@@ -116,6 +153,18 @@ func (m model) tabBar() string {
 			parts = append(parts, activeTabStyle.Render(label))
 		} else {
 			parts = append(parts, inactiveTabStyle.Render(label))
+		}
+	}
+	return strings.Join(parts, "  ")
+}
+
+func (m model) filterBar() string {
+	var parts []string
+	for i, f := range taskFilters {
+		if taskFilter(i) == m.filter {
+			parts = append(parts, activeTabStyle.Render(f.label))
+		} else {
+			parts = append(parts, inactiveTabStyle.Render(f.label))
 		}
 	}
 	return strings.Join(parts, "  ")
@@ -134,16 +183,14 @@ func (m model) View() string {
 	switch m.currentView {
 	case viewTimeline:
 		b.WriteString(m.viewTimelineBody())
-	case viewTodo:
-		b.WriteString(m.viewTodoBody())
-	case viewDone:
-		b.WriteString(m.viewDoneBody())
 	default:
-		b.WriteString(m.active.View(m.tasks, m.activities))
+		b.WriteString(m.filterBar())
+		b.WriteString("\n\n")
+		b.WriteString(m.tasksView.View(m.filteredTasks(), m.activities))
 	}
 
 	body := b.String()
-	footerStr := newFooter(m.active).View()
+	footerStr := newFooter(m.tasksView, m.filter).View()
 
 	if m.height > 0 {
 		bodyLines := strings.Count(body, "\n")

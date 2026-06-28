@@ -205,7 +205,7 @@ func (a tasksModel) View(tasks []Task, activities map[int64][]Activity) string {
 	var b strings.Builder
 
 	if len(tasks) == 0 {
-		b.WriteString("No tasks yet. Press 'a' to add one.\n")
+		b.WriteString("No tasks yet.\n")
 		return b.String()
 	}
 
@@ -220,9 +220,18 @@ func (a tasksModel) View(tasks []Task, activities map[int64][]Activity) string {
 		}
 		fmt.Fprintf(&b, "%s\n", line)
 
-		for _, act := range activities[t.ID] {
+		acts := activities[t.ID]
+		for j, act := range acts {
 			date := act.CreatedAt.Local().Format("Jan 2 3:04pm")
-			fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render(fmt.Sprintf("    · %s  %s", act.Note, date)))
+			sep := "│"
+			if j == len(acts)-1 {
+				sep = "└"
+			}
+			line := "    " +
+				logSeparatorStyle.Render(sep) + " " +
+				logTimestampStyle.Render(date) +
+				" " + logNoteStyle.Render(act.Note)
+			fmt.Fprintf(&b, "%s\n", line)
 		}
 	}
 

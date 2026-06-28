@@ -17,8 +17,7 @@ const (
 type taskFilter int
 
 const (
-	filterAll taskFilter = iota
-	filterInProgress
+	filterInProgress taskFilter = iota
 	filterTodo
 	filterDone
 )
@@ -27,7 +26,6 @@ var taskFilters = []struct {
 	label  string
 	status Status
 }{
-	{"All", ""},
 	{"In Progress", StatusInProgress},
 	{"To Do", StatusTodo},
 	{"Done", StatusDone},
@@ -60,9 +58,6 @@ func newModel(taskStore *TaskStore, activityStore *ActivityStore) model {
 }
 
 func (m model) filteredTasks() []Task {
-	if m.filter == filterAll {
-		return m.tasks
-	}
 	status := taskFilters[m.filter].status
 	var result []Task
 	for _, t := range m.tasks {
@@ -173,6 +168,7 @@ func (m model) filterBar() string {
 func (m model) View() string {
 	var b strings.Builder
 
+	b.WriteString("did — work journal\n\n")
 	b.WriteString(m.tabBar())
 	b.WriteString("\n\n")
 

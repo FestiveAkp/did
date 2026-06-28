@@ -40,7 +40,7 @@ func (s *ActivityStore) Create(taskID int64, note string) (Activity, error) {
 
 func (s *ActivityStore) ListForTask(taskID int64) ([]Activity, error) {
 	rows, err := s.db.Query(
-		`SELECT id, task_id, note, created_at FROM activities WHERE task_id = ? ORDER BY created_at DESC`,
+		`SELECT id, task_id, note, created_at FROM activities WHERE task_id = ? ORDER BY created_at ASC`,
 		taskID,
 	)
 	if err != nil {

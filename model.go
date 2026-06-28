@@ -159,14 +159,14 @@ func (m model) filterBar() string {
 
 	var segments []string
 	for i, f := range taskFilters {
-		label := " " + f.label + " "
+		label := "" + f.label + ""
 		if taskFilter(i) == m.filter {
 			segments = append(segments, activeFilterStyle.Render(label))
 		} else {
 			segments = append(segments, inactiveFilterStyle.Render(label))
 		}
 	}
-	filters := strings.Join(segments, "  ")
+	filters := strings.Join(segments, secondaryTextStyle.Render(" | "))
 
 	rule := "─"
 	if m.width > 0 {
@@ -179,7 +179,6 @@ func (m model) filterBar() string {
 func (m model) View() string {
 	var b strings.Builder
 
-	b.WriteString("did — work journal\n\n")
 	b.WriteString(m.tabBar())
 	b.WriteString("\n")
 

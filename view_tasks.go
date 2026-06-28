@@ -233,7 +233,7 @@ func (a tasksModel) View(tasks []Task, activities map[int64][]Activity) string {
 			if j == len(acts)-1 {
 				sep = "└"
 			}
-			line := "    " +
+			line := "  " +
 				logSeparatorStyle.Render(sep) + " " +
 				logTimestampStyle.Render(date) +
 				" " + logNoteStyle.Render(act.Note)

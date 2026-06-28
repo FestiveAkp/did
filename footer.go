@@ -34,13 +34,18 @@ func (f footer) View() string {
 		fmt.Fprintf(&b, "New activity: %s\n", f.input)
 		fmt.Fprintf(&b, "%s\n", secondaryTextStyle.Render("enter save | esc cancel"))
 	case modePickingStatus:
+		statusKeys := map[Status]string{
+			StatusTodo:       "t",
+			StatusInProgress: "i",
+			StatusDone:       "d",
+		}
 		b.WriteString("Set status:\n")
 		for i, st := range f.allStatuses {
 			cursor := "  "
 			if i == f.statusCursor {
-				cursor = "> "
+				cursor = "❯ "
 			}
-			line := fmt.Sprintf("%s%s %s", cursor, st.Icon(), st.Label())
+			line := fmt.Sprintf("%s%s [%s] %s", cursor, st.Icon(), statusKeys[st], st.Label())
 			if i == f.statusCursor {
 				line = selectedItemStyle.Render(line)
 			}

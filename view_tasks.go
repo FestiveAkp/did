@@ -166,6 +166,7 @@ func (a tasksModel) updateNormal(msg tea.KeyMsg, tasks []Task) (tasksModel, tea.
 }
 
 func (a tasksModel) updatePickingStatus(msg tea.KeyMsg, tasks []Task) (tasksModel, tea.Cmd) {
+	var selectStatus Status
 	switch msg.String() {
 	case "esc":
 		a.mode = modeNormal
@@ -178,10 +179,19 @@ func (a tasksModel) updatePickingStatus(msg tea.KeyMsg, tasks []Task) (tasksMode
 		if a.statusCursor > 0 {
 			a.statusCursor--
 		}
+	case "t":
+		selectStatus = StatusTodo
+	case "i":
+		selectStatus = StatusInProgress
+	case "d":
+		selectStatus = StatusDone
 	case "enter":
+		selectStatus = AllStatuses[a.statusCursor]
+	}
+	if selectStatus != "" {
 		a.mode = modeNormal
 		task := tasks[a.cursor]
-		status := AllStatuses[a.statusCursor]
+		status := selectStatus
 		return a, func() tea.Msg {
 			if err := a.taskStore.SetStatus(task.ID, status); err != nil {
 				return errMsg{err}
@@ -205,16 +215,12 @@ func (a tasksModel) View(tasks []Task, activities map[int64][]Activity) string {
 	var b strings.Builder
 
 	if len(tasks) == 0 {
-		b.WriteString("No tasks yet.\n")
+		b.WriteString("No tasks found.\n")
 		return b.String()
 	}
 
 	for i, t := range tasks {
-		cursor := "  "
-		if i == a.cursor {
-			cursor = "> "
-		}
-		line := fmt.Sprintf("%s%s %s", cursor, t.Status.Icon(), t.Title)
+		line := fmt.Sprintf("%s %s", t.Status.Icon(), t.Title)
 		if i == a.cursor {
 			line = selectedItemStyle.Render(line)
 		}

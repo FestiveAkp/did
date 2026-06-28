@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type viewKind int
@@ -143,7 +144,7 @@ func (m model) tabBar() string {
 
 	var parts []string
 	for _, t := range tabs {
-		label := fmt.Sprintf("%s %s", t.key, t.label)
+		label := fmt.Sprintf("[%s] %s", t.key, t.label)
 		if t.view == m.currentView {
 			parts = append(parts, activeTabStyle.Render(label))
 		} else {
@@ -154,15 +155,25 @@ func (m model) tabBar() string {
 }
 
 func (m model) filterBar() string {
-	var parts []string
+	lineStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("238"))
+
+	var segments []string
 	for i, f := range taskFilters {
+		label := " " + f.label + " "
 		if taskFilter(i) == m.filter {
-			parts = append(parts, activeTabStyle.Render(f.label))
+			segments = append(segments, activeFilterStyle.Render(label))
 		} else {
-			parts = append(parts, inactiveTabStyle.Render(f.label))
+			segments = append(segments, inactiveFilterStyle.Render(label))
 		}
 	}
-	return strings.Join(parts, "  ")
+	filters := strings.Join(segments, "  ")
+
+	rule := "─"
+	if m.width > 0 {
+		rule = strings.Repeat("─", m.width)
+	}
+
+	return lineStyle.Render(rule) + "\n" + filters + "\n" + lineStyle.Render(rule)
 }
 
 func (m model) View() string {
@@ -170,7 +181,7 @@ func (m model) View() string {
 
 	b.WriteString("did — work journal\n\n")
 	b.WriteString(m.tabBar())
-	b.WriteString("\n\n")
+	b.WriteString("\n")
 
 	if m.err != nil {
 		fmt.Fprintf(&b, "error: %v\n\n", m.err)
@@ -181,7 +192,7 @@ func (m model) View() string {
 		b.WriteString(m.viewTimelineBody())
 	default:
 		b.WriteString(m.filterBar())
-		b.WriteString("\n\n")
+		b.WriteString("\n")
 		b.WriteString(m.tasksView.View(m.filteredTasks(), m.activities))
 	}
 
